@@ -1742,6 +1742,23 @@ if (typeof pdfjsLib === 'undefined') { console.warn('pdfjsLib CDN failed to load
 const STAFF = ['何晓光', '王永胜', '孙明月', '王鑫', '田睿', '潘双山', '江超'];
 const FARMS = ['北阳种猪场', '头道川种猪场', '杨木沟种猪场', '岔路河预处理', '袁家岭管理中心', '北阳综合服务中心', '北阳育肥1场', '北阳育肥2场', '北阳育肥3场', '北阳育肥6场', '松原综合服务中心', '松原育肥1场', '松原育肥2场', '松原育肥3场', '松原育肥4场', '松原育肥5场', '松原育肥6场', '松原育肥7场', '松原育肥8场', '陡咀子育肥场', '吉大饲料厂', '永吉洗消', '永吉饲料厂', '屠宰场'];
 
+// ============== Safety Wrappers (移到所有 let 之前，typeof 检测 TDZ 安全) ==============
+function safeArr(x) { return Array.isArray(x) ? x : []; }
+function safeObj(x) { return (x && typeof x === 'object' && !Array.isArray(x)) ? x : {}; }
+function ensureData() {
+    // typeof 在 TDZ 区间返回 'undefined'，不会抛 ReferenceError
+    if (typeof TODO_DATA === 'undefined' || !Array.isArray(TODO_DATA)) TODO_DATA = [];
+    if (typeof ISSUE_DATA === 'undefined' || !Array.isArray(ISSUE_DATA)) ISSUE_DATA = [];
+    if (typeof SOP_LIST === 'undefined' || !Array.isArray(SOP_LIST)) SOP_LIST = [];
+    if (typeof RISK_TOP5 === 'undefined' || !Array.isArray(RISK_TOP5)) RISK_TOP5 = [];
+    if (typeof OVERVIEW === 'undefined' || !OVERVIEW || typeof OVERVIEW !== 'object') OVERVIEW = { week:{}, month:{}, total:{} };
+    if (typeof MODULE_DATA === 'undefined' || !MODULE_DATA || typeof MODULE_DATA !== 'object') MODULE_DATA = { week:[],month:[],total:[] };
+    if (typeof CLOSED_LOOP_DETAIL === 'undefined' || !CLOSED_LOOP_DETAIL || typeof CLOSED_LOOP_DETAIL !== 'object') CLOSED_LOOP_DETAIL = { pending:[], progress:[], done:[] };
+    if (typeof SCORE_DATA === 'undefined' || !SCORE_DATA || typeof SCORE_DATA !== 'object') SCORE_DATA = { week:{}, month:{}, total:{} };
+    if (typeof TEAM_DATA === 'undefined' || !TEAM_DATA || typeof TEAM_DATA !== 'object') TEAM_DATA = { week:[], month:[], total:[] };
+    if (typeof PENALTY_DATA === 'undefined' || !PENALTY_DATA || typeof PENALTY_DATA !== 'object') PENALTY_DATA = { week:[], month:[], year:[], summary:{} };
+}
+
 let TEAM_DATA = {
     week: [
         { name: '何晓光', total: 6, major: 0, normal: 4, minor: 2, completed: 6, rate: 100 },
@@ -2106,22 +2123,7 @@ let OVERVIEW = {
 
 const chartInstances = {};
 
-// ============== Safety Wrappers (防云端数据未到达时崩) ==============
-function safeArr(x) { return Array.isArray(x) ? x : []; }
-function safeObj(x) { return (x && typeof x === 'object' && !Array.isArray(x)) ? x : {}; }
-function ensureData() {
-    if (!Array.isArray(TODO_DATA)) TODO_DATA = [];
-    if (!Array.isArray(ISSUE_DATA)) ISSUE_DATA = [];
-    if (!Array.isArray(SOP_LIST)) SOP_LIST = [];
-    if (!Array.isArray(RISK_TOP5)) RISK_TOP5 = [];
-    if (!OVERVIEW || typeof OVERVIEW !== 'object') OVERVIEW = { week:{}, month:{}, total:{} };
-    if (!MODULE_DATA || typeof MODULE_DATA !== 'object') MODULE_DATA = { week:[],month:[],total:[] };
-    if (!CLOSED_LOOP_DETAIL || typeof CLOSED_LOOP_DETAIL !== 'object') CLOSED_LOOP_DETAIL = { pending:[], progress:[], done:[] };
-    if (!SCORE_DATA || typeof SCORE_DATA !== 'object') SCORE_DATA = { week:{}, month:{}, total:{} };
-    if (!TEAM_DATA || typeof TEAM_DATA !== 'object') TEAM_DATA = { week:[], month:[], total:[] };
-    if (!PENALTY_DATA || typeof PENALTY_DATA !== 'object') PENALTY_DATA = { week:[], month:[], year:[], summary:{} };
-}
-ensureData();
+// ensureData/safeArr/safeObj 已移至文件最前面（避免 TDZ）
 
 // ============== localStorage Persistence ==============
 const STORAGE_KEY = 'jilin_audit_workbench_data_v1';
