@@ -3811,20 +3811,25 @@ const origTitleMap = {
 
 // Populate dashboard edit fields
 function populateDashboardEdit() {
+    ensureData();
     ['w','m','t'].forEach(p => {
         const key = p === 'w' ? 'week' : p === 'm' ? 'month' : 'total';
-        const d = OVERVIEW[key];
-        document.getElementById('e'+p+'_checks').value = d.checks;
-        document.getElementById('e'+p+'_issues').value = d.issues;
-        document.getElementById('e'+p+'_fixed').value = d.fixed;
-        document.getElementById('e'+p+'_fixRate').value = d.fixRate;
-        document.getElementById('e'+p+'_major').value = d.major;
-        document.getElementById('e'+p+'_pending').value = d.pending;
-        document.getElementById('e'+p+'_overdue').value = d.overdue;
-        document.getElementById('e'+p+'_personEntry').value = d.personEntry;
-        document.getElementById('e'+p+'_vehicleWash').value = d.vehicleWash;
-        document.getElementById('e'+p+'_materialDisinfection').value = d.materialDisinfection;
-        document.getElementById('e'+p+'_pigTransfer').value = d.pigTransfer;
+        const d = OVERVIEW[key] || {};
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = (val == null) ? '' : val;
+        };
+        setVal('e'+p+'_checks', d.checks);
+        setVal('e'+p+'_issues', d.issues);
+        setVal('e'+p+'_fixed', d.fixed);
+        setVal('e'+p+'_fixRate', d.fixRate);
+        setVal('e'+p+'_major', d.major);
+        setVal('e'+p+'_pending', d.pending);
+        setVal('e'+p+'_overdue', d.overdue);
+        setVal('e'+p+'_personEntry', d.personEntry);
+        setVal('e'+p+'_vehicleWash', d.vehicleWash);
+        setVal('e'+p+'_materialDisinfection', d.materialDisinfection);
+        setVal('e'+p+'_pigTransfer', d.pigTransfer);
     });
 }
 populateDashboardEdit();
@@ -3971,20 +3976,26 @@ renderTeamEdit('teamYearEdit', TEAM_DATA.year, 'year');
 
 // ============== Save & Sync ==============
 function saveAllEdits() {
+    ensureData();
     // 1. Save OVERVIEW
     ['w','m','t'].forEach(p => {
         const key = p === 'w' ? 'week' : p === 'm' ? 'month' : 'total';
-        OVERVIEW[key].checks = Number(document.getElementById('e'+p+'_checks').value);
-        OVERVIEW[key].issues = Number(document.getElementById('e'+p+'_issues').value);
-        OVERVIEW[key].fixed = Number(document.getElementById('e'+p+'_fixed').value);
-        OVERVIEW[key].fixRate = Number(document.getElementById('e'+p+'_fixRate').value);
-        OVERVIEW[key].major = Number(document.getElementById('e'+p+'_major').value);
-        OVERVIEW[key].pending = Number(document.getElementById('e'+p+'_pending').value);
-        OVERVIEW[key].overdue = Number(document.getElementById('e'+p+'_overdue').value);
-        OVERVIEW[key].personEntry = Number(document.getElementById('e'+p+'_personEntry').value);
-        OVERVIEW[key].vehicleWash = Number(document.getElementById('e'+p+'_vehicleWash').value);
-        OVERVIEW[key].materialDisinfection = Number(document.getElementById('e'+p+'_materialDisinfection').value);
-        OVERVIEW[key].pigTransfer = Number(document.getElementById('e'+p+'_pigTransfer').value);
+        if (!OVERVIEW[key] || typeof OVERVIEW[key] !== 'object') OVERVIEW[key] = {};
+        const get = id => {
+            const el = document.getElementById(id);
+            return el ? Number(el.value) || 0 : 0;
+        };
+        OVERVIEW[key].checks = get('e'+p+'_checks');
+        OVERVIEW[key].issues = get('e'+p+'_issues');
+        OVERVIEW[key].fixed = get('e'+p+'_fixed');
+        OVERVIEW[key].fixRate = get('e'+p+'_fixRate');
+        OVERVIEW[key].major = get('e'+p+'_major');
+        OVERVIEW[key].pending = get('e'+p+'_pending');
+        OVERVIEW[key].overdue = get('e'+p+'_overdue');
+        OVERVIEW[key].personEntry = get('e'+p+'_personEntry');
+        OVERVIEW[key].vehicleWash = get('e'+p+'_vehicleWash');
+        OVERVIEW[key].materialDisinfection = get('e'+p+'_materialDisinfection');
+        OVERVIEW[key].pigTransfer = get('e'+p+'_pigTransfer');
     });
 
     // 2. Save TODO_DATA
