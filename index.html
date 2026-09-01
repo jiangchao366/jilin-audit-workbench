@@ -1720,11 +1720,11 @@
                 <div class="edit-save-msg" id="editSaveMsg">✅ 数据已保存，所有关联模块已同步更新！</div>
             </div>
 
-<!-- CDN Libraries (placed here so HTML renders first) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<!-- Vendor Libraries (local, served from same origin for fast & stable loading in China) -->
+<script src="vendor/chart.umd.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/mammoth.browser.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
 <script>
 // CDN load check - if Chart didn't load, provide a stub so page doesn't crash
 if (typeof Chart === 'undefined') {
@@ -3261,7 +3261,7 @@ function renderSOPFilePreview(index) {
         }
         container.innerHTML = '<div class="sop-preview-loading">⏳ 正在渲染 PDF...</div>';
         try {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
             var pdfData = dataURLToArrayBuffer(dataURL);
             var loadingTask = pdfjsLib.getDocument({ data: pdfData });
             loadingTask.promise.then(function(pdf) {
