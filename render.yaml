@@ -1,0 +1,16 @@
+# Render Blueprint - 一键部署配置
+# 文档: https://render.com/docs/blueprint-spec
+previewsEnabled: false
+services:
+  - type: web
+    name: jilin-audit-workbench
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/state
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0

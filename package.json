@@ -1,0 +1,14 @@
+{
+  "name": "jilin-audit-workbench",
+  "version": "1.0.0",
+  "description": "吉林区稽核质检工作台 - 10人云协同编辑",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "keywords": ["audit", "workbench", "collaboration"],
+  "license": "MIT"
+}
