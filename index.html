@@ -7,13 +7,35 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B6%3C/text%3E%3C/svg%3E">
     <!-- CDN scripts moved to bottom of body for non-blocking page render -->
     <script>
-        // Global error handler - display errors visibly so page doesn't silently fail
-        window.addEventListener('error', function(e) {
-            var d = document.createElement('div');
-            d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:12px 20px;font-size:13px;z-index:99999;font-family:monospace;white-space:pre-wrap;word-break:break-all;';
-            d.textContent = 'JS Error: ' + (e.message || 'Unknown') + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '');
-            document.body ? document.body.appendChild(d) : document.documentElement.appendChild(d);
-        });
+        // Global error handler - 显示可关闭的红色错误条，方便调试；点 ✕ 可关闭
+        (function() {
+            function ensureErrorBar() {
+                var bar = document.getElementById('__errbar__');
+                if (bar) return bar;
+                bar = document.createElement('div');
+                bar.id = '__errbar__';
+                bar.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:8px 16px;font-size:12px;z-index:99999;font-family:monospace;white-space:pre-wrap;word-break:break-all;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);';
+                var msg = document.createElement('span');
+                msg.id = '__errbar_msg__';
+                msg.style.cssText = 'flex:1;';
+                var btn = document.createElement('button');
+                btn.textContent = '✕ 关闭';
+                btn.style.cssText = 'background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:#fff;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:12px;';
+                btn.onclick = function() { bar.style.display = 'none'; };
+                bar.appendChild(msg);
+                bar.appendChild(btn);
+                (document.body || document.documentElement).appendChild(bar);
+                return bar;
+            }
+            window.addEventListener('error', function(e) {
+                try {
+                    var bar = ensureErrorBar();
+                    var msg = document.getElementById('__errbar_msg__');
+                    msg.textContent = '⚠️ JS Error: ' + (e.message || 'Unknown') + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '');
+                    console.error('[Workbench Error]', e.error || e.message);
+                } catch (_) {}
+            });
+        })();
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1757,7 +1779,20 @@ function ensureData() {
     try { if (!CLOSED_LOOP_DETAIL || typeof CLOSED_LOOP_DETAIL !== 'object') CLOSED_LOOP_DETAIL = { pending:[], progress:[], done:[] }; } catch(e) {}
     try { if (!SCORE_DATA || typeof SCORE_DATA !== 'object') SCORE_DATA = { week:{}, month:{}, total:{} }; } catch(e) {}
     try { if (!TEAM_DATA || typeof TEAM_DATA !== 'object') TEAM_DATA = { week:[], month:[], total:[] }; } catch(e) {}
-    try { if (!PENALTY_DATA || typeof PENALTY_DATA !== 'object') PENALTY_DATA = { week:[], month:[], year:[], summary:{} }; } catch(e) {}
+    try {
+        if (!PENALTY_DATA || typeof PENALTY_DATA !== 'object') PENALTY_DATA = { week:[], month:[], year:[], summary:{} };
+        // 确保三个期间键都存在数组（防止云端拉到残缺数据时切换崩）
+        if (!Array.isArray(PENALTY_DATA.week)) PENALTY_DATA.week = [];
+        if (!Array.isArray(PENALTY_DATA.month)) PENALTY_DATA.month = [];
+        if (!Array.isArray(PENALTY_DATA.year)) PENALTY_DATA.year = [];
+        if (!PENALTY_DATA.summary || typeof PENALTY_DATA.summary !== 'object') PENALTY_DATA.summary = {};
+    } catch(e) {}
+    try { if (!Array.isArray(MODULE_DATA.week)) MODULE_DATA.week = []; } catch(e) {}
+    try { if (!Array.isArray(MODULE_DATA.month)) MODULE_DATA.month = []; } catch(e) {}
+    try { if (!Array.isArray(MODULE_DATA.total)) MODULE_DATA.total = []; } catch(e) {}
+    try { if (!Array.isArray(TEAM_DATA.week)) TEAM_DATA.week = []; } catch(e) {}
+    try { if (!Array.isArray(TEAM_DATA.month)) TEAM_DATA.month = []; } catch(e) {}
+    try { if (!Array.isArray(TEAM_DATA.total)) TEAM_DATA.total = []; } catch(e) {}
 }
 
 let TEAM_DATA = {
@@ -1943,6 +1978,7 @@ function renderPenaltyTable() {
     const tbody = document.getElementById('penaltyTableBody');
     const foot = document.getElementById('penaltyTableFoot');
     if (!tbody) return;
+    if (!Array.isArray(PENALTY_DATA[currentPenaltyPeriod])) PENALTY_DATA[currentPenaltyPeriod] = [];
     const data = PENALTY_DATA[currentPenaltyPeriod];
     const totalPersons = data.reduce((s, r) => s + (Number(r.persons) || 0), 0);
     const totalAmount = data.reduce((s, r) => s + (Number(r.amount) || 0), 0);
@@ -1967,17 +2003,23 @@ function renderPenaltyTable() {
 }
 
 function addPenaltyRow() {
+    ensureData();
+    if (!Array.isArray(PENALTY_DATA[currentPenaltyPeriod])) PENALTY_DATA[currentPenaltyPeriod] = [];
     PENALTY_DATA[currentPenaltyPeriod].push({ project: '北阳项目', persons: 0, amount: 0, note: '' });
     renderPenaltyTable();
 }
 
 function removePenaltyRow(idx) {
     if (!confirm('确定删除该行处罚记录？')) return;
+    ensureData();
+    if (!Array.isArray(PENALTY_DATA[currentPenaltyPeriod])) PENALTY_DATA[currentPenaltyPeriod] = [];
     PENALTY_DATA[currentPenaltyPeriod].splice(idx, 1);
     renderPenaltyTable();
 }
 
 function savePenaltyData() {
+    ensureData();
+    if (!Array.isArray(PENALTY_DATA[currentPenaltyPeriod])) PENALTY_DATA[currentPenaltyPeriod] = [];
     document.querySelectorAll('#penaltyTableBody [data-pen-idx]').forEach(el => {
         const idx = Number(el.dataset.penIdx);
         const key = el.dataset.penKey;
@@ -1994,6 +2036,8 @@ function savePenaltyData() {
 }
 
 function aggregatePenalty(period) {
+    ensureData();
+    if (!Array.isArray(PENALTY_DATA[period])) PENALTY_DATA[period] = [];
     const data = PENALTY_DATA[period];
     const agg = {};
     PENALTY_PROJECTS.forEach(p => { agg[p] = { persons: 0, amount: 0 }; });
@@ -2006,8 +2050,10 @@ function aggregatePenalty(period) {
 }
 
 function renderPenaltyStats() {
+    ensureData();
     const container = document.getElementById('penaltyStats');
     if (!container) return;
+    if (!Array.isArray(PENALTY_DATA[currentPenaltyPeriod])) PENALTY_DATA[currentPenaltyPeriod] = [];
     const data = PENALTY_DATA[currentPenaltyPeriod];
     const totalPersons = data.reduce((s, r) => s + (Number(r.persons) || 0), 0);
     const totalAmount = data.reduce((s, r) => s + (Number(r.amount) || 0), 0);
