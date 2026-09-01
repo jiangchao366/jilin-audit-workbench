@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>吉林区稽核质检工作台</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B6%3C/text%3E%3C/svg%3E">
     <!-- CDN scripts moved to bottom of body for non-blocking page render -->
     <script>
         // Global error handler - display errors visibly so page doesn't silently fail
@@ -1860,8 +1861,9 @@ let RISK_TOP5 = [
 ];
 
 function renderRiskTop5() {
+    ensureData();
     const container = document.getElementById('riskTop5List');
-    container.innerHTML = RISK_TOP5.map((item, i) => `
+    container.innerHTML = safeArr(RISK_TOP5).map((item, i) => `
         <div class="top5-item">
             <div class="top5-rank">${i + 1}</div>
             <div>
@@ -1919,6 +1921,7 @@ let PENALTY_DATA = {
 function escapeHtmlSafe(s) { return (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function renderPenaltyTable() {
+    ensureData();
     const tbody = document.getElementById('penaltyTableBody');
     const foot = document.getElementById('penaltyTableFoot');
     if (!tbody) return;
@@ -2102,6 +2105,23 @@ let OVERVIEW = {
 };
 
 const chartInstances = {};
+
+// ============== Safety Wrappers (防云端数据未到达时崩) ==============
+function safeArr(x) { return Array.isArray(x) ? x : []; }
+function safeObj(x) { return (x && typeof x === 'object' && !Array.isArray(x)) ? x : {}; }
+function ensureData() {
+    if (!Array.isArray(TODO_DATA)) TODO_DATA = [];
+    if (!Array.isArray(ISSUE_DATA)) ISSUE_DATA = [];
+    if (!Array.isArray(SOP_LIST)) SOP_LIST = [];
+    if (!Array.isArray(RISK_TOP5)) RISK_TOP5 = [];
+    if (!OVERVIEW || typeof OVERVIEW !== 'object') OVERVIEW = { week:{}, month:{}, total:{} };
+    if (!MODULE_DATA || typeof MODULE_DATA !== 'object') MODULE_DATA = { week:[],month:[],total:[] };
+    if (!CLOSED_LOOP_DETAIL || typeof CLOSED_LOOP_DETAIL !== 'object') CLOSED_LOOP_DETAIL = { pending:[], progress:[], done:[] };
+    if (!SCORE_DATA || typeof SCORE_DATA !== 'object') SCORE_DATA = { week:{}, month:{}, total:{} };
+    if (!TEAM_DATA || typeof TEAM_DATA !== 'object') TEAM_DATA = { week:[], month:[], total:[] };
+    if (!PENALTY_DATA || typeof PENALTY_DATA !== 'object') PENALTY_DATA = { week:[], month:[], year:[], summary:{} };
+}
+ensureData();
 
 // ============== localStorage Persistence ==============
 const STORAGE_KEY = 'jilin_audit_workbench_data_v1';
@@ -2356,8 +2376,9 @@ document.querySelectorAll('#globalPeriod .ptab').forEach(btn => {
 
 // ============== Dashboard Stats ==============
 function renderDashboardStats() {
+    ensureData();
     const period = document.querySelector('#globalPeriod .ptab.active')?.dataset.period || 'week';
-    const d = OVERVIEW[period] || {};
+    const d = (OVERVIEW && OVERVIEW[period]) || {};
     const stats = [
         { icon: '👥', cls: 'blue', label: '总检查人次', value: d.checks ?? 0, unit: '人次', meta: `<span class="up">↑ 较上周 +12%</span>` },
         { icon: '📋', cls: 'yellow', label: '总发现问题', value: d.issues ?? 0, unit: '项', meta: `<span class="up">↑ 较上周 +8%</span>` },
@@ -2380,6 +2401,7 @@ renderDashboardStats();
 
 // ============== Operation Stats ==============
 function renderOperationStats() {
+    ensureData();
     const activePeriod = document.querySelector('#globalPeriod .ptab.active')?.dataset.period || 'week';
     const periods = [
         { key: 'week',  label: '本周' },
@@ -2420,7 +2442,8 @@ renderOperationStats();
 
 // ============== Alert Banner (sync with TODO_DATA major items) ==============
 function updateAlert() {
-    const majorItems = TODO_DATA.filter(t => t.type === 'major');
+    const items = Array.isArray(TODO_DATA) ? TODO_DATA : [];
+    const majorItems = items.filter(t => t.type === 'major');
     const count = majorItems.length;
     const titleEl = document.getElementById('alertTitle');
     const descEl = document.getElementById('alertDesc');
@@ -2515,6 +2538,7 @@ function createModulePieChart() {
 
 // ============== Issue Table ==============
 function renderIssueTable() {
+    ensureData();
     const tbody = document.getElementById('issueTableBody');
     tbody.innerHTML = ISSUE_DATA.map((d, i) => {
         const riskCls = d.risk === '高' ? 'major' : d.risk === '中' ? 'normal' : 'minor';
@@ -2745,6 +2769,7 @@ function exportIssueExcel() {
 // ============== TODO List ==============
 let currentTodoFilter = 'all';
 function renderTodoList() {
+    ensureData();
     const list = document.getElementById('todoList');
     const filtered = currentTodoFilter === 'all' ? TODO_DATA : TODO_DATA.filter(t => t.type === currentTodoFilter);
     if (filtered.length === 0) {
@@ -2884,6 +2909,7 @@ function createClosedLoopChart() {
 }
 
 function renderClosedLoopTable() {
+    ensureData();
     const tbody = document.querySelector('#closedLoopTable tbody');
     const data = MODULE_DATA[currentClosedLoopPeriod].map((m, i) => ({
         ...m,
@@ -2907,7 +2933,8 @@ function renderClosedLoopTable() {
 
 // ============== SOP ==============
 function renderSOPList() {
-    document.getElementById('sopList').innerHTML = SOP_LIST.map((s, i) => `
+    ensureData();
+    document.getElementById('sopList').innerHTML = safeArr(SOP_LIST).map((s, i) => `
         <div class="sop-item">
             <div class="sop-icon">${s.icon}</div>
             <div class="sop-info">
@@ -3448,7 +3475,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============== Module & Team Tables ==============
 let currentModulePeriod = 'month', currentTeamPeriod = 'week';
 function renderModuleTable() {
-    const data = MODULE_DATA[currentModulePeriod];
+    ensureData();
+    const data = safeObj(MODULE_DATA)[currentModulePeriod];
     const tbody = document.getElementById('moduleTableBody');
     tbody.innerHTML = data.map(d => {
         const fixColor = d.fixRate >= 90 ? '#059669' : d.fixRate >= 85 ? '#f59e0b' : '#dc2626';
@@ -3516,7 +3544,8 @@ function renderAnalysisCharts() {
 try { renderAnalysisCharts(); } catch(e) { console.error('Analysis charts failed:', e); }
 
 function renderTeamTable() {
-    const data = TEAM_DATA[currentTeamPeriod];
+    ensureData();
+    const data = safeObj(TEAM_DATA)[currentTeamPeriod];
     const totals = data.reduce((acc, d) => ({
         total: acc.total + d.total, major: acc.major + d.major,
         normal: acc.normal + d.normal, minor: acc.minor + d.minor, completed: acc.completed + d.completed
@@ -3541,6 +3570,7 @@ renderTeamTable();
 // ============== Score Table (Week/Month/Year) ==============
 let currentScorePeriod = 'week';
 function renderScoreTable() {
+    ensureData();
     const tbody = document.getElementById('scoreBody');
     if (!tbody) return;
     const data = SCORE_DATA[currentScorePeriod];
@@ -3747,6 +3777,7 @@ populateDashboardEdit();
 
 // Populate todo edit list
 function renderTodoEditList() {
+    ensureData();
     const container = document.getElementById('todoEditList');
     container.innerHTML = TODO_DATA.map((t, i) => `
         <div class="edit-item-row" id="todoEditRow${i}">
@@ -4237,18 +4268,20 @@ var CloudSync = (function() {
     function applyRemoteUpdate(section, data) {
         _cloudSyncing = true;
         try {
+            if (!data || typeof data !== 'object') { _cloudSyncing = false; return; }
             switch (section) {
-                case 'OVERVIEW': OVERVIEW = data; break;
-                case 'TODO_DATA': TODO_DATA = data; break;
-                case 'MODULE_DATA': MODULE_DATA = data; break;
-                case 'CLOSED_LOOP_DETAIL': CLOSED_LOOP_DETAIL = data; break;
-                case 'SCORE_DATA': SCORE_DATA = data; break;
-                case 'RISK_TOP5': RISK_TOP5 = data; break;
-                case 'TEAM_DATA': TEAM_DATA = data; break;
-                case 'ISSUE_DATA': ISSUE_DATA = data; break;
-                case 'SOP_LIST': SOP_LIST = data; break;
-                case 'PENALTY_DATA': PENALTY_DATA = data; break;
+                case 'OVERVIEW': if (data && typeof data === 'object' && !Array.isArray(data)) OVERVIEW = data; break;
+                case 'TODO_DATA': if (Array.isArray(data)) TODO_DATA = data; break;
+                case 'MODULE_DATA': if (data && typeof data === 'object' && !Array.isArray(data)) MODULE_DATA = data; break;
+                case 'CLOSED_LOOP_DETAIL': if (data && typeof data === 'object' && !Array.isArray(data)) CLOSED_LOOP_DETAIL = data; break;
+                case 'SCORE_DATA': if (data && typeof data === 'object' && !Array.isArray(data)) SCORE_DATA = data; break;
+                case 'RISK_TOP5': if (Array.isArray(data)) RISK_TOP5 = data; break;
+                case 'TEAM_DATA': if (data && typeof data === 'object' && !Array.isArray(data)) TEAM_DATA = data; break;
+                case 'ISSUE_DATA': if (Array.isArray(data)) ISSUE_DATA = data; break;
+                case 'SOP_LIST': if (Array.isArray(data)) SOP_LIST = data; break;
+                case 'PENALTY_DATA': if (data && typeof data === 'object' && !Array.isArray(data)) PENALTY_DATA = data; break;
             }
+            ensureData();
             try { saveToStorage(); } catch(e) {}
             renderSection(section);
         } catch (e) {
