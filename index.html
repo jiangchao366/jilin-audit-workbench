@@ -1742,21 +1742,22 @@ if (typeof pdfjsLib === 'undefined') { console.warn('pdfjsLib CDN failed to load
 const STAFF = ['何晓光', '王永胜', '孙明月', '王鑫', '田睿', '潘双山', '江超'];
 const FARMS = ['北阳种猪场', '头道川种猪场', '杨木沟种猪场', '岔路河预处理', '袁家岭管理中心', '北阳综合服务中心', '北阳育肥1场', '北阳育肥2场', '北阳育肥3场', '北阳育肥6场', '松原综合服务中心', '松原育肥1场', '松原育肥2场', '松原育肥3场', '松原育肥4场', '松原育肥5场', '松原育肥6场', '松原育肥7场', '松原育肥8场', '陡咀子育肥场', '吉大饲料厂', '永吉洗消', '永吉饲料厂', '屠宰场'];
 
-// ============== Safety Wrappers (移到所有 let 之前，typeof 检测 TDZ 安全) ==============
+// ============== Safety Wrappers (用 try-catch 吞 TDZ 错误) ==============
 function safeArr(x) { return Array.isArray(x) ? x : []; }
 function safeObj(x) { return (x && typeof x === 'object' && !Array.isArray(x)) ? x : {}; }
 function ensureData() {
-    // typeof 在 TDZ 区间返回 'undefined'，不会抛 ReferenceError
-    if (typeof TODO_DATA === 'undefined' || !Array.isArray(TODO_DATA)) TODO_DATA = [];
-    if (typeof ISSUE_DATA === 'undefined' || !Array.isArray(ISSUE_DATA)) ISSUE_DATA = [];
-    if (typeof SOP_LIST === 'undefined' || !Array.isArray(SOP_LIST)) SOP_LIST = [];
-    if (typeof RISK_TOP5 === 'undefined' || !Array.isArray(RISK_TOP5)) RISK_TOP5 = [];
-    if (typeof OVERVIEW === 'undefined' || !OVERVIEW || typeof OVERVIEW !== 'object') OVERVIEW = { week:{}, month:{}, total:{} };
-    if (typeof MODULE_DATA === 'undefined' || !MODULE_DATA || typeof MODULE_DATA !== 'object') MODULE_DATA = { week:[],month:[],total:[] };
-    if (typeof CLOSED_LOOP_DETAIL === 'undefined' || !CLOSED_LOOP_DETAIL || typeof CLOSED_LOOP_DETAIL !== 'object') CLOSED_LOOP_DETAIL = { pending:[], progress:[], done:[] };
-    if (typeof SCORE_DATA === 'undefined' || !SCORE_DATA || typeof SCORE_DATA !== 'object') SCORE_DATA = { week:{}, month:{}, total:{} };
-    if (typeof TEAM_DATA === 'undefined' || !TEAM_DATA || typeof TEAM_DATA !== 'object') TEAM_DATA = { week:[], month:[], total:[] };
-    if (typeof PENALTY_DATA === 'undefined' || !PENALTY_DATA || typeof PENALTY_DATA !== 'object') PENALTY_DATA = { week:[], month:[], year:[], summary:{} };
+    // 关键：TDZ 区间对 let/const 变量的访问（包括 typeof 和直接赋值）都会抛 ReferenceError
+    // 用 try-catch 吞掉，let 声明执行后会自动覆盖这些空值
+    try { if (!Array.isArray(TODO_DATA)) TODO_DATA = []; } catch(e) {}
+    try { if (!Array.isArray(ISSUE_DATA)) ISSUE_DATA = []; } catch(e) {}
+    try { if (!Array.isArray(SOP_LIST)) SOP_LIST = []; } catch(e) {}
+    try { if (!Array.isArray(RISK_TOP5)) RISK_TOP5 = []; } catch(e) {}
+    try { if (!OVERVIEW || typeof OVERVIEW !== 'object') OVERVIEW = { week:{}, month:{}, total:{} }; } catch(e) {}
+    try { if (!MODULE_DATA || typeof MODULE_DATA !== 'object') MODULE_DATA = { week:[],month:[],total:[] }; } catch(e) {}
+    try { if (!CLOSED_LOOP_DETAIL || typeof CLOSED_LOOP_DETAIL !== 'object') CLOSED_LOOP_DETAIL = { pending:[], progress:[], done:[] }; } catch(e) {}
+    try { if (!SCORE_DATA || typeof SCORE_DATA !== 'object') SCORE_DATA = { week:{}, month:{}, total:{} }; } catch(e) {}
+    try { if (!TEAM_DATA || typeof TEAM_DATA !== 'object') TEAM_DATA = { week:[], month:[], total:[] }; } catch(e) {}
+    try { if (!PENALTY_DATA || typeof PENALTY_DATA !== 'object') PENALTY_DATA = { week:[], month:[], year:[], summary:{} }; } catch(e) {}
 }
 
 let TEAM_DATA = {
@@ -1890,7 +1891,7 @@ function renderRiskTop5() {
         </div>
     `).join('');
 }
-renderRiskTop5();
+try { renderRiskTop5(); } catch(e) { console.error('Risk top5 initial render failed:', e); }
 
 // 从 DOM 读取 contenteditable 编辑内容回写到 RISK_TOP5 并保存到 localStorage
 function saveRiskTop5() {
@@ -2034,6 +2035,7 @@ function renderPenaltyStats() {
 }
 
 function createPenaltyCharts() {
+    ensureData();
     const agg = aggregatePenalty(currentPenaltyPeriod);
     const labels = PENALTY_PROJECTS;
     const amountData = labels.map(p => agg[p].amount);
@@ -2342,7 +2344,7 @@ function importData(input) {
 }
 
 // 页面加载时从 localStorage 恢复数据
-loadFromStorage();
+try { loadFromStorage(); } catch(e) { console.error('Load from storage failed:', e); }
 // 重新渲染 RISK_TOP5（renderRiskTop5 在数据声明后立即调用，需在加载后重新渲染）
 try { renderRiskTop5(); } catch(e) { console.error('Risk top5 render failed:', e); }
 try { renderIssueTable(); } catch(e) { console.error('Issue table render failed:', e); }
@@ -2481,10 +2483,11 @@ function updateAlert() {
 
     descEl.textContent = `其中 ${parts.join('、')}，需立即启动整改`;
 }
-updateAlert();
+try { updateAlert(); } catch(e) { console.error('Update alert failed:', e); }
 
 // ============== Trend Chart ==============
 function createTrendChart() {
+    ensureData();
     const ctx = document.getElementById('trendChart').getContext('2d');
     chartInstances.trend = new Chart(ctx, {
         type: 'line',
@@ -2560,7 +2563,7 @@ function renderIssueTable() {
         </tr>`;
     }).join('');
 }
-renderIssueTable();
+try { renderIssueTable(); } catch(e) { console.error('Issue table initial render failed:', e); }
 
 function addIssueRow() {
     const tbody = document.getElementById('issueTableBody');
@@ -2813,7 +2816,7 @@ function renderTodoList() {
         </div>`;
     }).join('');
 }
-renderTodoList();
+try { renderTodoList(); } catch(e) { console.error('Todo list initial render failed:', e); }
 
 document.querySelectorAll('.todo-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -2886,6 +2889,7 @@ function createTodoDaysChart() {
 // ============== Closed Loop ==============
 let currentClosedLoopPeriod = 'week';
 function createClosedLoopChart() {
+    ensureData();
     const ctx = document.getElementById('closedLoopChart').getContext('2d');
     const detail = CLOSED_LOOP_DETAIL[currentClosedLoopPeriod];
     chartInstances.closedLoop = new Chart(ctx, {
@@ -3502,7 +3506,7 @@ function renderModuleTable() {
         </tr>`;
     }).join('');
 }
-renderModuleTable();
+try { renderModuleTable(); } catch(e) { console.error('Module table initial render failed:', e); }
 
 document.querySelectorAll('#analysisPeriod .ptab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3515,7 +3519,8 @@ document.querySelectorAll('#analysisPeriod .ptab').forEach(btn => {
 });
 
 function renderAnalysisCharts() {
-    const data = MODULE_DATA[currentModulePeriod];
+    ensureData();
+    const data = safeObj(MODULE_DATA)[currentModulePeriod];
     if (chartInstances.analysisPie) chartInstances.analysisPie.destroy();
     if (chartInstances.analysisBar) chartInstances.analysisBar.destroy();
     chartInstances.analysisPie = new Chart(document.getElementById('analysisPieChart').getContext('2d'), {
@@ -3567,7 +3572,7 @@ function renderTeamTable() {
         <td>—</td><td>团队合计</td><td>${totals.total}</td><td>${totals.major}</td><td>${totals.normal}</td><td>${totals.minor}</td><td>${totals.completed}</td><td>100.0%</td>
     </tr>`;
 }
-renderTeamTable();
+try { renderTeamTable(); } catch(e) { console.error('Team table initial render failed:', e); }
 
 // ============== Score Table (Week/Month/Year) ==============
 let currentScorePeriod = 'week';
@@ -3617,7 +3622,7 @@ function renderScoreTable() {
         </tr>`;
     }).join('');
 }
-renderScoreTable();
+try { renderScoreTable(); } catch(e) { console.error('Score table initial render failed:', e); }
 
 document.querySelectorAll('#scorePeriod .ptab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3639,6 +3644,7 @@ document.querySelectorAll('#teamPeriod .ptab').forEach(btn => {
 
 // ============== BigData Charts ==============
 function createBigdataCharts() {
+    ensureData();
     chartInstances.bigdataPerson = new Chart(document.getElementById('bigdataPersonChart').getContext('2d'), {
         type: 'bar',
         data: {
@@ -3829,7 +3835,7 @@ function renderTodoEditList() {
         </div>
     `).join('');
 }
-renderTodoEditList();
+try { renderTodoEditList(); } catch(e) { console.error('Todo edit list initial render failed:', e); }
 
 function addTodoItem() {
     const newId = TODO_DATA.length > 0 ? Math.max(...TODO_DATA.map(t => t.id)) + 1 : 1;
