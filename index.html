@@ -2356,14 +2356,14 @@ document.querySelectorAll('#globalPeriod .ptab').forEach(btn => {
 
 // ============== Dashboard Stats ==============
 function renderDashboardStats() {
-    const period = document.querySelector('#globalPeriod .ptab.active').dataset.period;
-    const d = OVERVIEW[period];
+    const period = document.querySelector('#globalPeriod .ptab.active')?.dataset.period || 'week';
+    const d = OVERVIEW[period] || {};
     const stats = [
-        { icon: '👥', cls: 'blue', label: '总检查人次', value: d.checks, unit: '人次', meta: `<span class="up">↑ 较上周 +12%</span>` },
-        { icon: '📋', cls: 'yellow', label: '总发现问题', value: d.issues, unit: '项', meta: `<span class="up">↑ 较上周 +8%</span>` },
-        { icon: '✅', cls: 'green', label: '已整改', value: d.fixed, unit: '项', meta: `整改率 ${d.fixRate}%` },
-        { icon: '⏰', cls: 'orange', label: '待整改', value: d.pending, unit: '项', meta: `其中逾期 ${d.overdue} 项` },
-        { icon: '🚨', cls: 'red', label: '重大风险', value: d.major, unit: '项', meta: `<span style="color:#dc2626;">红色预警</span>` }
+        { icon: '👥', cls: 'blue', label: '总检查人次', value: d.checks ?? 0, unit: '人次', meta: `<span class="up">↑ 较上周 +12%</span>` },
+        { icon: '📋', cls: 'yellow', label: '总发现问题', value: d.issues ?? 0, unit: '项', meta: `<span class="up">↑ 较上周 +8%</span>` },
+        { icon: '✅', cls: 'green', label: '已整改', value: d.fixed ?? 0, unit: '项', meta: `整改率 ${d.fixRate ?? 0}%` },
+        { icon: '⏰', cls: 'orange', label: '待整改', value: d.pending ?? 0, unit: '项', meta: `其中逾期 ${d.overdue ?? 0} 项` },
+        { icon: '🚨', cls: 'red', label: '重大风险', value: d.major ?? 0, unit: '项', meta: `<span style="color:#dc2626;">红色预警</span>` }
     ];
     document.getElementById('dashboardStats').innerHTML = stats.map(s => `
         <div class="stat-card">
@@ -2392,23 +2392,29 @@ function renderOperationStats() {
         { icon: '📦', cls: 'orange', field: 'materialDisinfection', unit: '批次', meta: '进场物资消毒完成' },
         { icon: '🐷', cls: 'purple', field: 'pigTransfer',         unit: '批次', meta: '转群/出栏转运批次' }
     ];
-    document.getElementById('operationStats').innerHTML = stats.map(s => `
+    document.getElementById('operationStats').innerHTML = stats.map(s => {
+        var fieldLabel = ({personEntry:'人员入场数量',vehicleWash:'车辆洗消数量',materialDisinfection:'物料消毒批次',pigTransfer:'猪只转运批次'})[s.field];
+        return `
         <div class="stat-card">
             <div class="stat-card-head">
                 <div class="stat-icon ${s.cls}">${s.icon}</div>
-                <div class="stat-label">${ ({personEntry:'人员入场数量',vehicleWash:'车辆洗消数量',materialDisinfection:'物料消毒批次',pigTransfer:'猪只转运批次'})[s.field] }</div>
+                <div class="stat-label">${fieldLabel}</div>
             </div>
             <div class="op-periods">
-                ${periods.map(p => `
+                ${periods.map(p => {
+                    var v = (OVERVIEW[p.key] && OVERVIEW[p.key][s.field] != null) ? OVERVIEW[p.key][s.field] : 0;
+                    return `
                     <div class="op-period-item ${p.key === activePeriod ? 'active' : ''}">
                         <div class="op-p-label">${p.label}</div>
-                        <div class="op-p-value">${OVERVIEW[p.key][s.field]}<span class="op-p-unit"> ${s.unit}</span></div>
+                        <div class="op-p-value">${v}<span class="op-p-unit"> ${s.unit}</span></div>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
             </div>
             <div class="stat-meta">${s.meta}</div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 renderOperationStats();
 
