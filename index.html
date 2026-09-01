@@ -4231,11 +4231,13 @@ var CloudSync = (function() {
         readOverrideParams();
         var serverOk = await detectServer();
         if (!serverOk) {
-            updateStatus('offline', '云端不可用');
-            alert('云端连接失败，请检查网络或联系管理员。\n详情：' + (window.__lastSbErr || ''));
+            updateStatus('offline', '云端不可用,重试中');
+            console.warn('Supabase 暂时不可用，8 秒后自动重试…');
+            setTimeout(function() { try { init(); } catch(e) {} }, 8000);
             return;
         }
         if (!userName) {
+            updateStatus('offline', '待输入姓名');
             showUserNameModal();
         } else {
             startSync();
@@ -4457,6 +4459,8 @@ var CloudSync = (function() {
     return {
         init: init,
         pushAll: pushAll,
+        isLoggedIn: function() { return !!userName; },
+        promptLogin: function() { showUserNameModal(); },
         get isOnline() { return isOnline; },
         get userName() { return userName; }
     };
@@ -4490,39 +4494,19 @@ setTimeout(function() { try { CloudSync.init(); } catch(e) { console.error('Clou
     </div>
 </div>
 
-<!-- 云同步状态指示器 -->
-<div class="cloud-status" id="cloudStatus" style="display:none;">
+<!-- 云同步状态指示器：未连接时点击可重新弹出姓名输入 -->
+<div class="cloud-status" id="cloudStatus" style="display:none;cursor:pointer;" onclick="if(!CloudSync.isLoggedIn()) CloudSync.promptLogin();" title="点击输入姓名加入云协同">
     <span class="dot offline"></span>
     <span class="status-text">未连接</span>
     <span class="sep">|</span>
     <span class="online-label">在线:</span>
     <span class="online-names" id="onlineUsersList">-</span>
     <span class="sep">|</span>
-    <span class="change-btn" onclick="changeCloudUser()">切换用户</span>
-    <span class="sep">|</span>
-    <span class="change-btn" onclick="showServerConfigModal()">⚙️ 服务器</span>
+    <span class="change-btn" onclick="event.stopPropagation();changeCloudUser()">切换用户</span>
 </div>
 
 <!-- 同步提示 -->
 <div class="sync-toast" id="syncToast"></div>
-
-<!-- 服务器地址配置弹窗 -->
-<div class="user-modal-overlay" id="serverConfigModal" style="display:none;">
-    <div class="user-modal-box">
-        <h2>🔗 服务器配置</h2>
-        <p style="color:#6b7280;font-size:13px;margin:8px 0 16px;">输入云协同服务器地址（如 Render/Railway 部署后的 URL），用于 10 人同时编辑同步。</p>
-        <input type="text" id="serverUrlInput" placeholder="https://your-app.onrender.com" autocomplete="off" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:12px;" />
-        <div style="display:flex;gap:8px;">
-            <button onclick="confirmServerUrl()" style="flex:1;padding:10px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">确认连接</button>
-            <button onclick="useSameOriginServer()" style="flex:1;padding:10px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:8px;font-size:14px;cursor:pointer;">使用同源</button>
-        </div>
-        <p style="color:#9ca3af;font-size:11px;margin-top:12px;line-height:1.6;">
-            📌 同源模式：如果当前页面由 server.js 提供（如 http://localhost:3000），API 与页面同源，无需填地址。<br>
-            📌 跨源模式：如果页面是静态托管（如 CloudStudio），需要填 server.js 部署的地址。<br>
-            📌 地址不需要加 /api 后缀，如 https://myapp.onrender.com
-        </p>
-    </div>
-</div>
 
 <script>
 // 服务器模式下显示云同步状态条
