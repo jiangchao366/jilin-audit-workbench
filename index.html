@@ -1230,9 +1230,11 @@
                             </div>
                             <button class="toolbar-btn primary" onclick="addPenaltyRow()">➕ 新增行</button>
                             <button class="toolbar-btn" onclick="savePenaltyData()">💾 保存</button>
+                            <button class="toolbar-btn" onclick="exportPenaltyExcel()">📤 导出Excel</button>
+                            <button class="toolbar-btn" onclick="exportPenaltyBackup()">🗃️ 备份JSON</button>
                         </div>
                     </div>
-                    <p style="font-size:12px;color:#9ca3af;margin-bottom:12px;">按项目（北阳/松原/杨木沟/头道川/外围/物流/其他）记录每周、每月、年度处罚人员数量与处罚金额，支持在线编辑、保存与自动持久化。</p>
+                    <p style="font-size:12px;color:#9ca3af;margin-bottom:12px;">按项目（北阳/松原/杨木沟/头道川/外围/物流/其他）记录每周、每月、年度处罚人员数量与处罚金额，支持在线编辑、保存与自动持久化。导出Excel含本周/本月/本年三期明细+汇总；备份JSON可用于数据存档与恢复。</p>
                     <div style="overflow-x:auto;">
                         <table class="table" id="penaltyTable">
                             <thead>
@@ -1409,42 +1411,16 @@
                             <span class="card-title-icon">🧠</span>
                             团队人员稽核大数据分析
                         </div>
-                    </div>
-                    <p style="font-size: 13px; color: #4b5563; margin-bottom: 16px;">
-                        基于工作台最新本周、本月、本年三期全量稽核数据，从稽核产出梯队、问题排查质量、风险识别能力、整改闭环表现四大维度开展精准大数据复盘，真实还原 5 名稽核人员工作效能、能力短板与岗位适配度，为团队稽核分工优化、人员专项赋能、工作考核落地提供数据支撑。
-                    </p>
-
-                    <div class="analysis-section">
-                        <h3>一、稽核产出梯队：分层差异显著，核心人员产出集中度较高</h3>
-                        <p>结合三期数据综合研判，团队人员稽核产出呈现分层差异、梯队分化的特征。<span class="hl">本年累计维度，孙明月以 97 项问题发现量居团队第一</span>，是团队问题排查的核心主力；其次为何晓光 83 项、王永胜 69 项、王鑫 69 项、田睿 67 项，五人共同承担场区全部问题排查工作量，产出量整体稳定均衡。</p>
-                        <p>短期周期数据印证人员工作节奏：<span class="hl">本月团队合计发现问题量保持稳定</span>，何晓光、孙明月为主要产出人员；本周团队合计 13 项问题，何晓光、王鑫、田睿为主要产出人员，王永胜、孙明月本周无稽核问题产出，短期排查活跃度不足。</p>
-                    </div>
-
-                    <div class="analysis-section">
-                        <h3>二、排查质量分析：数量与质量不匹配，高风险识别能力两极分化</h3>
-                        <p>从问题等级结构来看，团队全员排查以中、低风险问题为主，<span class="hl">高风险识别能力差异化突出</span>，是团队核心能力短板。本年全量高风险问题集中于孙明月（2 项）、何晓光（1 项）、王永胜（1 项），三名人员具备较强的风险敏感度；王鑫、田睿全年未排查出任何高风险问题，排查工作局限于表面常规问题。</p>
-                    </div>
-
-                    <div class="analysis-section">
-                        <h3>三、整改闭环效能：全员闭环率 100%</h3>
-                        <p><span class="hl-g">基于最新台账数据，团队所有稽核人员个人问题复核完成率均为 100%</span>，无个人逾期未闭环、未整改问题，全员问题整改执行力强，台账落地、闭环跟进工作落实到位。团队整体整改率 85.5%，存在少量团队级逾期问题，均已落实到人并完成闭环管控。</p>
-                    </div>
-
-                    <div class="analysis-section">
-                        <h3>四、人员综合评级与优化建议</h3>
-                        <div class="rating-grid">
-                            <div class="rating-card core">
-                                <h4>🥇 全能核心型</h4>
-                                <p class="names">孙明月、何晓光</p>
-                                <p>问题产出量位居团队前列，且具备稀缺的高风险识别能力，整改闭环满分，适配高风险区域专项稽查、隐患复盘、疑难问题整改牵头工作，作为团队稽核骨干重点培养。</p>
-                            </div>
-                            <div class="rating-card stable">
-                                <h4>🥈 稳健合规型</h4>
-                                <p class="names">王永胜、王鑫、田睿</p>
-                                <p>常规问题排查稳定、整改闭环到位，工作规范性强，但王鑫、田睿缺失高风险隐患识别能力，后续需重点开展重大隐患识别、生物安全高危风险判定专项培训，提升稽查深度与排查专业性。</p>
-                            </div>
+                        <div class="toolbar-right">
+                            <span id="bigdataUpdatedTime" style="font-size:12px;color:#9ca3af;margin-right:6px;"></span>
+                            <button class="toolbar-btn" onclick="renderBigdataAnalysis()">🔄 重新分析</button>
                         </div>
                     </div>
+                    <p style="font-size: 13px; color: #4b5563; margin-bottom: 16px;">
+                        基于<b>工作台实时数据</b>（本周、本月、本年三期全量稽核数据）自动生成，从稽核产出梯队、问题排查质量、风险识别能力、整改闭环表现四大维度开展大数据复盘。数据更新或多人协同编辑后自动重新分析。
+                    </p>
+
+                    <div id="bigdataPersonAnalysis"></div>
                 </div>
 
                 <div class="card">
@@ -1464,29 +1440,7 @@
                             问题类型大数据分析
                         </div>
                     </div>
-
-                    <div class="analysis-section">
-                        <h3>一、问题品类分布：三大核心问题固化高发</h3>
-                        <p>本月、本年数据一致性极强，无阶段性突发问题，各类问题均为场区长期固化的管控短板。<span class="hl">生物安全为全场第一高发问题，本月 32 项、本年 198 项</span>，占比分别达 38.6%、38.3%，近乎占据全场问题总量四成，是场区管控最薄弱、最顽固的核心痛点。其次为生产管理类、设备管理类，三类核心问题合计占比超 82%。</p>
-                    </div>
-
-                    <div class="analysis-section">
-                        <h3>二、风险结构分析：生物安全为核心风险源</h3>
-                        <p>全场本年累计重大问题 33 项，<span class="hl">生物安全领域重大问题 14 项，占全场重大风险总量 42.4%</span>，是猪场养殖安全、疫情防控的最大隐患。其次为生产管理 8 项、设备管理 6 项、三防管理 3 项、档案及记录管理 2 项。</p>
-                    </div>
-
-                    <div class="analysis-section">
-                        <h3>三、整改短板复盘：高风险模块整改滞后</h3>
-                        <p><span class="hl-g">档案及记录管理本年整改率 96.7%、本月 100%</span>，基础流程问题可实现快速全面闭环。<span class="hl">生物安全本年整改率 82.8%、本月 81.3%，三防管理本年、本月整改率均为 81.3%</span>，是全场整改滞后、问题反弹最严重的两大模块。</p>
-                    </div>
-
-                    <div class="analysis-section">
-                        <h3>四、品类管控精准优化方案</h3>
-                        <p><span class="hl-b">1. 核心攻坚模块（生物安全）：</span>作为场区一号管控重点，建立"日巡查+周专项+月复盘"常态化管控机制，重点整治消毒管控、免疫追溯、病死猪处置、人员车辆洗消等高风险环节，由核心稽核人员牵头专项排查。</p>
-                        <p><span class="hl-b">2. 常规优化模块（生产、设备管理）：</span>固化日常操作 SOP，落实设备定期维保、生产操作双人复核制度，从源头减少人为操作疏漏、设备故障类常规问题。</p>
-                        <p><span class="hl-b">3. 短板补齐模块（三防管理）：</span>针对防鼠、防鸟、防虫管控漏洞，定期排查场区围墙、防护网、粪污区域隐患，建立整改"回头看"复核机制。</p>
-                        <p><span class="hl-b">4. 常态保持模块（档案记录管理）：</span>延续现有规范化管控模式，持续保持高闭环、低风险的优良管控成效。</p>
-                    </div>
+                    <div id="bigdataModuleAnalysis"></div>
                 </div>
 
                 <div class="chart-row">
@@ -2033,6 +1987,97 @@ function savePenaltyData() {
     createPenaltyCharts();
     const ok = saveToStorage();
     alert(ok ? '✅ 处罚记录已保存，刷新页面后不丢失！' : '⚠️ 保存失败，请重试。');
+}
+
+// ============== 处罚记录导出备份 ==============
+// 导出 Excel：本周/本月/本年三期明细 + 汇总表
+function exportPenaltyExcel() {
+    try {
+        if (typeof XLSX === 'undefined') { alert('⚠️ Excel 组件未加载（vendor/xlsx.full.min.js），无法导出。'); return; }
+        ensureData();
+        const periodNames = { week: '本周', month: '本月', year: '本年' };
+        const wb = XLSX.utils.book_new();
+        let hasData = false;
+
+        Object.keys(periodNames).forEach(p => {
+            const data = Array.isArray(PENALTY_DATA[p]) ? PENALTY_DATA[p] : [];
+            if (data.length > 0) hasData = true;
+            const rows = data.map((r, i) => ({
+                '序号': i + 1,
+                '项目': r.project || '',
+                '处罚人员数量': Number(r.persons) || 0,
+                '处罚金额(元)': Number(r.amount) || 0,
+                '处罚说明': r.note || ''
+            }));
+            const totalPersons = data.reduce((s, r) => s + (Number(r.persons) || 0), 0);
+            const totalAmount = data.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+            rows.push({ '序号': '合计', '项目': '—', '处罚人员数量': totalPersons, '处罚金额(元)': totalAmount, '处罚说明': '共 ' + data.length + ' 条' });
+            const ws = XLSX.utils.json_to_sheet(rows, { header: ['序号', '项目', '处罚人员数量', '处罚金额(元)', '处罚说明'] });
+            ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 40 }];
+            XLSX.utils.book_append_sheet(wb, ws, periodNames[p]);
+        });
+
+        // 汇总表
+        const aggRows = PENALTY_PROJECTS.map(p => {
+            const row = { '项目': p };
+            let grandPersons = 0, grandAmount = 0;
+            Object.keys(periodNames).forEach(k => {
+                const data = Array.isArray(PENALTY_DATA[k]) ? PENALTY_DATA[k] : [];
+                const rows = data.filter(r => r.project === p);
+                const persons = rows.reduce((s, r) => s + (Number(r.persons) || 0), 0);
+                const amount = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+                row[periodNames[k] + '处罚人数'] = persons;
+                row[periodNames[k] + '处罚金额(元)'] = amount;
+                grandPersons += persons; grandAmount += amount;
+            });
+            row['累计人数'] = grandPersons;
+            row['累计金额(元)'] = grandAmount;
+            return row;
+        });
+        const grandRow = { '项目': '合计' };
+        Object.keys(periodNames).forEach(k => {
+            const data = Array.isArray(PENALTY_DATA[k]) ? PENALTY_DATA[k] : [];
+            grandRow[periodNames[k] + '处罚人数'] = data.reduce((s, r) => s + (Number(r.persons) || 0), 0);
+            grandRow[periodNames[k] + '处罚金额(元)'] = data.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+        });
+        grandRow['累计人数'] = aggRows.reduce((s, r) => s + r['累计人数'], 0);
+        grandRow['累计金额(元)'] = aggRows.reduce((s, r) => s + r['累计金额(元)'], 0);
+        aggRows.push(grandRow);
+        const wsSum = XLSX.utils.json_to_sheet(aggRows);
+        wsSum['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, wsSum, '三期汇总');
+
+        if (!hasData) { alert('⚠️ 三期处罚记录均为空，无数据可导出。'); return; }
+        const fname = '处罚记录_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+        XLSX.writeFile(wb, fname);
+        alert('✅ 导出成功！文件已下载：' + fname);
+    } catch (err) {
+        alert('❌ 导出失败：' + err.message);
+    }
+}
+
+// 备份 JSON：导出处罚记录完整数据
+function exportPenaltyBackup() {
+    try {
+        ensureData();
+        const backup = {
+            type: 'jilin_audit_penalty_backup',
+            version: 1,
+            exportTime: new Date().toISOString(),
+            data: JSON.parse(JSON.stringify(PENALTY_DATA))
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '处罚记录备份_' + new Date().toISOString().slice(0, 10) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+        alert('✅ 备份成功！文件已下载：' + a.download);
+    } catch (err) {
+        alert('❌ 备份失败：' + err.message);
+    }
 }
 
 function aggregatePenalty(period) {
@@ -3688,17 +3733,212 @@ document.querySelectorAll('#teamPeriod .ptab').forEach(btn => {
     });
 });
 
+// ============== BigData 实时分析（基于当前数据动态生成） ==============
+function bdArr(obj, key) {
+    try { if (obj && Array.isArray(obj[key])) return obj[key]; } catch(e) {}
+    return [];
+}
+function bdNum(v) { const n = Number(v); return isNaN(n) ? 0 : n; }
+
+function renderBigdataAnalysis() {
+    try {
+        ensureData();
+        renderBigdataPersonAnalysis();
+        renderBigdataModuleAnalysis();
+        const t = document.getElementById('bigdataUpdatedTime');
+        if (t) t.textContent = '分析时间：' + new Date().toLocaleString('zh-CN', { hour12: false });
+    } catch (e) {
+        console.error('大数据分析生成失败:', e);
+        const p = document.getElementById('bigdataPersonAnalysis');
+        if (p) p.innerHTML = '<div class="analysis-section"><p>⚠️ 分析生成失败：' + escapeHtmlSafe(e.message) + '</p></div>';
+    }
+}
+
+function renderBigdataPersonAnalysis() {
+    const container = document.getElementById('bigdataPersonAnalysis');
+    if (!container) return;
+
+    const periods = { week: '本周', month: '本月', year: '本年' };
+    const byPeriod = {};
+    Object.keys(periods).forEach(p => {
+        byPeriod[p] = bdArr(TEAM_DATA, p).map(d => ({
+            name: d.name || '—', total: bdNum(d.total), major: bdNum(d.major),
+            normal: bdNum(d.normal), minor: bdNum(d.minor),
+            completed: bdNum(d.completed), rate: bdNum(d.rate)
+        })).sort((a, b) => b.total - a.total);
+    });
+
+    const year = byPeriod.year, month = byPeriod.month, week = byPeriod.week;
+    const activeYear = year.filter(d => d.total > 0);
+    const activeNames = activeYear.map(d => d.name);
+    const yearTotal = year.reduce((s, d) => s + d.total, 0);
+    const monthTotal = month.reduce((s, d) => s + d.total, 0);
+    const weekTotal = week.reduce((s, d) => s + d.total, 0);
+
+    // 一、产出梯队
+    let s1 = '';
+    if (activeYear.length === 0) {
+        s1 = '<p>当前本年累计暂无稽核问题产出数据，请先在「数据修正」中维护团队人员数据。</p>';
+    } else {
+        const top = activeYear[0];
+        const ranking = activeYear.slice(1).map(d => `${d.name} ${d.total} 项${d.major > 0 ? `（含重大 ${d.major} 项）` : ''}`).join('、');
+        s1 = `<p>结合三期数据综合研判，团队人员稽核产出呈现分层差异、梯队分化的特征。<span class="hl">本年累计维度，${top.name}以 ${top.total} 项问题发现量居团队第一</span>，是团队问题排查的核心主力；${ranking ? '其次为 ' + ranking + '；' : ''}${activeNames.length} 人共同承担场区全部问题排查工作量。</p>`;
+        const mActive = month.filter(d => d.total > 0), mIdle = month.filter(d => d.total === 0 && year.find(y => y.name === d.name && y.total > 0));
+        const wActive = week.filter(d => d.total > 0), wIdle = week.filter(d => d.total === 0 && year.find(y => y.name === d.name && y.total > 0));
+        s1 += `<p>短期周期数据印证人员工作节奏：本月团队合计发现问题 ${monthTotal} 项${mActive.length ? '，' + mActive.map(d => d.name + ' ' + d.total + ' 项').join('、') + ' 为主要产出人员' : ''}${mIdle.length ? '；' + mIdle.map(d => d.name).join('、') + ' 本月暂无产出' : ''}。本周团队合计 ${weekTotal} 项${wActive.length ? '，' + wActive.map(d => d.name).join('、') + ' 为主要产出人员' : ''}${wIdle.length ? '，<span class="hl">' + wIdle.map(d => d.name).join('、') + ' 本周无稽核问题产出，短期排查活跃度不足</span>' : ''}。</p>`;
+    }
+
+    // 二、排查质量（重大问题识别能力）
+    let s2 = '';
+    const majorHolders = activeYear.filter(d => d.major > 0);
+    const majorTotal = year.reduce((s, d) => s + d.major, 0);
+    if (majorHolders.length > 0) {
+        s2 = `<p>从问题等级结构来看，团队全员排查以中、低风险问题为主，<span class="hl">高风险识别能力差异化突出</span>，是团队核心能力短板。本年全量重大问题合计 ${majorTotal} 项，集中于${majorHolders.map(d => d.name + '（' + d.major + ' 项）').join('、')}，具备较强的风险敏感度；${activeNames.filter(n => !majorHolders.some(h => h.name === n)).map(n => n).join('、') || '其他人员'}全年未排查出重大问题，排查工作局限于表面常规问题，需提升隐患识别深度。</p>`;
+    } else {
+        s2 = `<p>从问题等级结构来看，团队全员排查均以一般、轻微问题为主，<span class="hl">本年暂无重大问题检出记录</span>，全员重大隐患识别能力均有待验证与提升，建议开展重大隐患识别专项培训与考核。</p>`;
+    }
+
+    // 三、整改闭环
+    const fullRate = activeYear.filter(d => d.rate >= 100);
+    const avgRate = activeYear.length ? activeYear.reduce((s, d) => s + d.rate, 0) / activeYear.length : 0;
+    let s3 = '';
+    if (fullRate.length === activeYear.length && activeYear.length > 0) {
+        s3 = `<p><span class="hl-g">基于最新台账数据，团队所有稽核人员个人问题复核完成率均为 100%</span>，无个人逾期未闭环、未整改问题，全员问题整改执行力强，台账落地、闭环跟进工作落实到位。</p>`;
+    } else if (activeYear.length > 0) {
+        const lowRate = activeYear.filter(d => d.rate < 100);
+        s3 = `<p><span class="hl-g">团队平均复核完成率 ${avgRate.toFixed(1)}%</span>。其中 ${fullRate.map(d => d.name).join('、') || '暂无人员'} 复核完成率 100%；<span class="hl">${lowRate.map(d => d.name + ' ' + d.rate.toFixed(1) + '%').join('、')} 复核完成率未达标</span>，需重点跟进个人整改闭环时效。</p>`;
+    } else {
+        s3 = '<p>暂无人员闭环数据，请先维护团队人员数据。</p>';
+    }
+
+    // 四、人员综合评级（按规则自动分类）
+    let s4 = '';
+    if (activeYear.length > 0) {
+        const maxTotal = activeYear[0].total;
+        const coreMembers = activeYear.filter(d => d.major > 0 || d.total >= maxTotal * 0.85);
+        const stableMembers = activeYear.filter(d => !coreMembers.includes(d));
+        const coreNames = coreMembers.map(d => d.name).join('、') || '—';
+        const stableNames = stableMembers.map(d => d.name).join('、') || '—';
+        const noMajorNames = activeYear.filter(d => d.major === 0).map(d => d.name).join('、');
+        s4 = `<div class="rating-grid">
+            <div class="rating-card core">
+                <h4>🥇 全能核心型</h4>
+                <p class="names">${coreNames}</p>
+                <p>问题产出量位居团队前列${coreMembers.some(d => d.major > 0) ? '，且具备稀缺的重大风险识别能力' : ''}，整改闭环表现好，适配高风险区域专项稽查、隐患复盘、疑难问题整改牵头工作，作为团队稽核骨干重点培养。</p>
+            </div>
+            <div class="rating-card stable">
+                <h4>🥈 稳健合规型</h4>
+                <p class="names">${stableNames}</p>
+                <p>常规问题排查稳定、整改闭环到位，工作规范性强${noMajorNames ? '；' + noMajorNames + ' 暂无重大隐患识别记录，后续需重点开展重大隐患识别、生物安全高危风险判定专项培训，提升稽查深度' : ''}。</p>
+            </div>
+        </div>`;
+    }
+
+    container.innerHTML = `
+        <div class="analysis-section">
+            <h3>一、稽核产出梯队：分层差异显著，核心人员产出集中度较高</h3>${s1}
+        </div>
+        <div class="analysis-section">
+            <h3>二、排查质量分析：数量与质量匹配度，重大风险识别能力分布</h3>${s2}
+        </div>
+        <div class="analysis-section">
+            <h3>三、整改闭环效能</h3>${s3}
+        </div>
+        <div class="analysis-section">
+            <h3>四、人员综合评级与优化建议</h3>${s4}
+        </div>`;
+}
+
+function renderBigdataModuleAnalysis() {
+    const container = document.getElementById('bigdataModuleAnalysis');
+    if (!container) return;
+
+    const month = bdArr(MODULE_DATA, 'month'), total = bdArr(MODULE_DATA, 'total');
+    const mods = (total.length ? total : month).map(d => ({
+        name: d.name || '—', count: bdNum(d.count), pct: bdNum(d.pct), major: bdNum(d.major), fixRate: bdNum(d.fixRate)
+    })).sort((a, b) => b.count - a.count);
+    const monthMods = month.map(d => ({ name: d.name || '—', count: bdNum(d.count), pct: bdNum(d.pct), fixRate: bdNum(d.fixRate) }));
+
+    if (mods.length === 0) {
+        container.innerHTML = '<div class="analysis-section"><p>暂无模块数据，请先在「数据修正」中维护问题模块数据。</p></div>';
+        return;
+    }
+
+    const totalAll = mods.reduce((s, d) => s + d.count, 0);
+    const top = mods[0];
+    const topMonth = monthMods.find(m => m.name === top.name) || { count: 0, pct: 0 };
+    const top3 = mods.slice(0, 3);
+    const top3Pct = totalAll > 0 ? (top3.reduce((s, d) => s + d.count, 0) / totalAll * 100) : 0;
+
+    // 一、品类分布
+    let s1 = `<p><span class="hl">${top.name}为全场第一高发问题，本月 ${topMonth.count} 项、本年累计 ${top.count} 项</span>，占比分别达 ${topMonth.pct.toFixed(1)}%、${(totalAll > 0 ? top.count / totalAll * 100 : 0).toFixed(1)}%，是场区管控最薄弱、最顽固的核心痛点。其次为${mods.slice(1, 3).map(d => d.name + '（累计 ' + d.count + ' 项）').join('、')}，三大核心问题合计占比 ${top3Pct.toFixed(1)}%。</p>`;
+
+    // 二、风险结构
+    const majorTotal = mods.reduce((s, d) => s + d.major, 0);
+    const majorMods = mods.filter(d => d.major > 0);
+    let s2 = '';
+    if (majorMods.length > 0) {
+        s2 = `<p>全场本年累计重大问题 ${majorTotal} 项，<span class="hl">${majorMods[0].name}领域重大问题 ${majorMods[0].major} 项，占全场重大风险总量 ${(majorTotal > 0 ? majorMods[0].major / majorTotal * 100 : 0).toFixed(1)}%</span>，是猪场养殖安全、疫情防控的最大隐患。其次为${majorMods.slice(1).map(d => d.name + ' ' + d.major + ' 项').join('、') || '其他模块'}。</p>`;
+    } else {
+        s2 = `<p>本年累计暂无重大问题记录，各模块风险以中低等级为主，管控态势平稳。</p>`;
+    }
+
+    // 三、整改短板
+    const sortedFix = mods.slice().sort((a, b) => b.fixRate - a.fixRate);
+    const best = sortedFix[0], worst = sortedFix[sortedFix.length - 1];
+    const worstMonth = monthMods.find(m => m.name === worst.name) || { fixRate: 0 };
+    let s3 = `<p><span class="hl-g">${best.name}本年整改率 ${best.fixRate.toFixed(1)}%</span>，基础流程问题可实现快速全面闭环。<span class="hl">${worst.name}本年整改率 ${worst.fixRate.toFixed(1)}%、本月 ${worstMonth.fixRate.toFixed(1)}%</span>，是全场整改相对滞后的模块，需防范问题反弹。</p>`;
+
+    // 四、管控建议（按排名自动生成）
+    const advice = [];
+    if (top.count > 0) advice.push(`<p><span class="hl-b">1. 核心攻坚模块（${top.name}）：</span>当前第一高发管控重点，建议建立"日巡查+周专项+月复盘"常态化管控机制，重点整治高风险环节，由核心稽核人员牵头专项排查。</p>`);
+    if (mods[1]) advice.push(`<p><span class="hl-b">2. 常规优化模块（${mods.slice(1, 3).map(d => d.name).join('、')}）：</span>固化日常操作 SOP，落实设备定期维保、生产操作双人复核制度，从源头减少人为疏漏类常规问题。</p>`);
+    advice.push(`<p><span class="hl-b">3. 短板补齐模块（${worst.name}）：</span>针对整改率偏低情况，定期排查隐患，建立整改"回头看"复核机制，防止同类问题反复发生。</p>`);
+    advice.push(`<p><span class="hl-b">4. 常态保持模块（${best.name}）：</span>延续现有规范化管控模式，持续保持高闭环、低风险的优良管控成效。</p>`);
+
+    container.innerHTML = `
+        <div class="analysis-section">
+            <h3>一、问题品类分布：核心问题固化高发</h3>${s1}
+        </div>
+        <div class="analysis-section">
+            <h3>二、风险结构分析：重大风险源分布</h3>${s2}
+        </div>
+        <div class="analysis-section">
+            <h3>三、整改短板复盘：模块整改率对比</h3>${s3}
+        </div>
+        <div class="analysis-section">
+            <h3>四、品类管控精准优化方案（基于当前数据自动生成）</h3>${advice.join('')}
+        </div>`;
+}
+
+// 大数据页整体刷新：图表销毁重建 + 分析文本重新生成
+function refreshBigdataAll() {
+    try {
+        ['bigdataPerson', 'bigdataModule', 'bigdataFix'].forEach(k => {
+            if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch(e) {} chartInstances[k] = null; }
+        });
+        createBigdataCharts();
+    } catch(e) {}
+    try { renderBigdataAnalysis(); } catch(e) {}
+}
+
 // ============== BigData Charts ==============
 function createBigdataCharts() {
-    ensureData();
+    ['bigdataPerson', 'bigdataModule', 'bigdataFix'].forEach(k => {
+        if (chartInstances[k]) { try { chartInstances[k].destroy(); } catch(e) {} chartInstances[k] = null; }
+    });
+    try { ensureData(); } catch(e) {}
+    const bdWeek = bdArr(TEAM_DATA, 'week'), bdMonth = bdArr(TEAM_DATA, 'month'), bdYear = bdArr(TEAM_DATA, 'year');
+    const bdLabelNames = (bdWeek.length ? bdWeek : (bdMonth.length ? bdMonth : bdYear)).map(d => d.name || '—');
+    const bdModTotal = bdArr(MODULE_DATA, 'total'), bdModMonth = bdArr(MODULE_DATA, 'month');
     chartInstances.bigdataPerson = new Chart(document.getElementById('bigdataPersonChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: STAFF,
+            labels: bdLabelNames,
             datasets: [
-                { label: '本周', data: TEAM_DATA.week.map(d => d.total), backgroundColor: 'rgba(26,93,58,0.7)', borderRadius: 4 },
-                { label: '本月', data: TEAM_DATA.month.map(d => d.total), backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 4 },
-                { label: '本年', data: TEAM_DATA.year.map(d => d.total), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius: 4 }
+                { label: '本周', data: bdWeek.map(d => bdNum(d.total)), backgroundColor: 'rgba(26,93,58,0.7)', borderRadius: 4 },
+                { label: '本月', data: bdMonth.map(d => bdNum(d.total)), backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 4 },
+                { label: '本年', data: bdYear.map(d => bdNum(d.total)), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius: 4 }
             ]
         },
         options: {
@@ -3711,10 +3951,10 @@ function createBigdataCharts() {
     chartInstances.bigdataModule = new Chart(document.getElementById('bigdataModuleChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: MODULE_DATA.total.map(d => d.name),
+            labels: (bdModTotal.length ? bdModTotal : bdModMonth).map(d => d.name || '—'),
             datasets: [
-                { label: '本月', data: MODULE_DATA.month.map(d => d.count), backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 4 },
-                { label: '累计', data: MODULE_DATA.total.map(d => d.count), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius: 4 }
+                { label: '本月', data: bdModMonth.map(d => bdNum(d.count)), backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 4 },
+                { label: '累计', data: bdModTotal.map(d => bdNum(d.count)), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius: 4 }
             ]
         },
         options: {
@@ -3727,10 +3967,10 @@ function createBigdataCharts() {
     chartInstances.bigdataFix = new Chart(document.getElementById('bigdataFixChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: MODULE_DATA.total.map(d => d.name),
+            labels: (bdModTotal.length ? bdModTotal : bdModMonth).map(d => d.name || '—'),
             datasets: [
-                { label: '整改率(%)', data: MODULE_DATA.total.map(d => d.fixRate), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius: 4, yAxisID: 'y' },
-                { label: '重大问题数', type: 'line', data: MODULE_DATA.total.map(d => d.major), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.2)', tension: 0.3, yAxisID: 'y1', borderWidth: 2, pointRadius: 5 }
+                { label: '整改率(%)', data: (bdModTotal.length ? bdModTotal : bdModMonth).map(d => bdNum(d.fixRate)), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius: 4, yAxisID: 'y' },
+                { label: '重大问题数', type: 'line', data: (bdModTotal.length ? bdModTotal : bdModMonth).map(d => bdNum(d.major)), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.2)', tension: 0.3, yAxisID: 'y1', borderWidth: 2, pointRadius: 5 }
             ]
         },
         options: {
@@ -3769,6 +4009,7 @@ document.querySelectorAll('#closedLoopPeriod .ptab').forEach(btn => {
     });
 });
 try { createBigdataCharts(); } catch(e) { console.error('Bigdata charts failed:', e); }
+try { renderBigdataAnalysis(); } catch(e) { console.error('Bigdata analysis failed:', e); }
 
 // ============== 处罚记录 周期切换 + 初始化 ==============
 document.querySelectorAll('#penaltyPeriod .ptab').forEach(btn => {
@@ -4374,6 +4615,7 @@ var CloudSync = (function() {
                 case 'MODULE_DATA':
                     renderModuleTable();
                     try { renderAnalysisCharts(); } catch(e) {}
+                    try { refreshBigdataAll(); } catch(e) {}
                     break;
                 case 'CLOSED_LOOP_DETAIL':
                     renderClosedLoopTable();
@@ -4381,12 +4623,16 @@ var CloudSync = (function() {
                     break;
                 case 'SCORE_DATA': renderScoreTable(); break;
                 case 'RISK_TOP5': renderRiskTop5(); break;
-                case 'TEAM_DATA': renderTeamTable(); break;
+                case 'TEAM_DATA':
+                    renderTeamTable();
+                    try { refreshBigdataAll(); } catch(e) {}
+                    break;
                 case 'ISSUE_DATA': renderIssueTable(); break;
                 case 'SOP_LIST': renderSOPList(); break;
                 case 'PENALTY_DATA':
                     renderPenaltyTable();
                     try { createPenaltyCharts(); } catch(e) {}
+                    try { refreshBigdataAll(); } catch(e) {}
                     break;
             }
         } catch (e) {
