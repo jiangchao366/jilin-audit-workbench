@@ -2919,7 +2919,57 @@ document.querySelectorAll('.todo-tab').forEach(tab => {
 });
 
 function batchAssign() { alert('批量派单：将所选待办事项批量下发给对应追踪人'); }
-function exportTodo() { alert('导出待办追踪报表：Excel/PDF'); }
+
+// ============== TODO 导出报表 ==============
+function exportTodo() {
+    try { ensureData(); } catch (e) {}
+    if (typeof XLSX === 'undefined') { alert('⚠️ Excel 组件未加载（vendor/xlsx.full.min.js），无法导出。'); return; }
+    if (!TODO_DATA || TODO_DATA.length === 0) { alert('⚠️ 暂无待办数据可导出。'); return; }
+    const typeName = t => t.type === 'major' ? '高风险问题' : (t.type === 'urgent' ? '紧急问题' : '逾期问题');
+    const priName = p => p === 'high' ? '高' : (p === 'medium' ? '中' : '低');
+    const stName = s => s === 'overdue' ? '已逾期' : (s === 'progress' ? '整改中' : '已完成');
+    const rows = TODO_DATA.map((t, i) => ({
+        '序号': i + 1,
+        '问题类型': typeName(t),
+        '标题': t.title,
+        '问题描述': t.desc,
+        '场区': t.farm || '',
+        '位置': t.location || '',
+        '追踪人': t.person || '',
+        '优先级': priName(t.priority),
+        '上报日期': t.reportedAt || '',
+        '整改期限': t.deadline || '',
+        '剩余天数': t.daysLeft ?? '',
+        '状态': stName(t.status)
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ['序号', '问题类型', '标题', '问题描述', '场区', '位置', '追踪人', '优先级', '上报日期', '整改期限', '剩余天数', '状态'] });
+    ws['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 42 }, { wch: 14 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws, '待办追踪报表');
+
+    // 汇总统计 sheet
+    const done = TODO_DATA.filter(t => t.status === 'done').length;
+    const progress = TODO_DATA.filter(t => t.status === 'progress').length;
+    const overdue = TODO_DATA.filter(t => t.status === 'overdue' || (t.daysLeft !== undefined && t.daysLeft < 0)).length;
+    const major = TODO_DATA.filter(t => t.type === 'major').length;
+    const personMap = {};
+    TODO_DATA.forEach(t => { if (t.status !== 'done') personMap[t.person] = (personMap[t.person] || 0) + 1; });
+    const agg = [
+        { '统计项': '待办总数', '数量': TODO_DATA.length },
+        { '统计项': '已完成', '数量': done },
+        { '统计项': '整改中', '数量': progress },
+        { '统计项': '已逾期', '数量': overdue },
+        { '统计项': '高风险问题', '数量': major }
+    ];
+    Object.keys(personMap).forEach(name => agg.push({ '统计项': `未完成-${name}`, '数量': personMap[name] }));
+    const ws2 = XLSX.utils.json_to_sheet(agg);
+    ws2['!cols'] = [{ wch: 20 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws2, '汇总统计');
+
+    const fname = '待办追踪报表_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    XLSX.writeFile(wb, fname);
+    alert('✅ 待办追踪报表导出成功！文件：' + fname);
+}
 
 // ============== TODO Charts ==============
 function createTodoPersonChart() {
