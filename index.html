@@ -1519,22 +1519,22 @@
                         <div class="sop-item">
                             <div class="sop-icon">📋</div>
                             <div class="sop-info"><div class="sop-name">稽核稽查周报</div><div class="sop-desc">本周团队产出、问题分布、整改情况</div></div>
-                            <button class="sop-btn">导出</button>
+                            <button class="sop-btn" onclick="exportWeeklyReport()">导出</button>
                         </div>
                         <div class="sop-item">
                             <div class="sop-icon">📊</div>
                             <div class="sop-info"><div class="sop-name">稽核稽查月报</div><div class="sop-desc">月度全量数据分析、TOP10、风险分布</div></div>
-                            <button class="sop-btn">导出</button>
+                            <button class="sop-btn" onclick="exportMonthlyReport()">导出</button>
                         </div>
                         <div class="sop-item">
                             <div class="sop-icon">🚨</div>
                             <div class="sop-info"><div class="sop-name">重大风险专项报告</div><div class="sop-desc">重大问题清单、风险分析、整改追踪</div></div>
-                            <button class="sop-btn">导出</button>
+                            <button class="sop-btn" onclick="exportRiskReport()">导出</button>
                         </div>
                         <div class="sop-item">
                             <div class="sop-icon">👥</div>
                             <div class="sop-info"><div class="sop-name">人员效能评估报告</div><div class="sop-desc">稽核人员产出、质量、闭环综合评估</div></div>
-                            <button class="sop-btn">导出</button>
+                            <button class="sop-btn" onclick="exportStaffReport()">导出</button>
                         </div>
                     </div>
                 </div>
@@ -2932,7 +2932,7 @@ function exportTodo() {
         '序号': i + 1,
         '问题类型': typeName(t),
         '标题': t.title,
-        '问题描述': t.desc,
+        '��题描述': t.desc,
         '场区': t.farm || '',
         '位置': t.location || '',
         '追踪人': t.person || '',
@@ -2969,6 +2969,319 @@ function exportTodo() {
     const fname = '待办追踪报表_' + new Date().toISOString().slice(0, 10) + '.xlsx';
     XLSX.writeFile(wb, fname);
     alert('✅ 待办追踪报表导出成功！文件：' + fname);
+}
+
+// ============== 报表导出（周报/月报/风险/人员效能）==============
+function _reportEmptyCheck(section, periodLabel) {
+    if (typeof XLSX === 'undefined') { alert('⚠️ Excel 组件未加载（vendor/xlsx.full.min.js），无法导出。'); return false; }
+    try { ensureData(); } catch (e) {}
+    if (!section || !Array.isArray(section) || section.length === 0) {
+        alert('⚠️ 暂无' + periodLabel + '数据可导出，请先在数据看板录入。');
+        return false;
+    }
+    return true;
+}
+
+function exportWeeklyReport() {
+    if (!_reportEmptyCheck(TEAM_DATA && TEAM_DATA.week, '本周')) return;
+    const wb = XLSX.utils.book_new();
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 1) 团队周度产出
+    const teamRows = TEAM_DATA.week.map((m, i) => ({
+        '序号': i + 1, '稽核人员': m.name,
+        '本周排查总数': m.total || 0, '重大问题数': m.major || 0,
+        '一般问题数': m.normal || 0, '轻微问题数': m.minor || 0,
+        '已完成': m.completed || 0, '整改完成率(%)': m.rate ?? 0
+    }));
+    const wsTeam = XLSX.utils.json_to_sheet(teamRows, { header: ['序号', '稽核人员', '本周排查总数', '重大问题数', '一般问题数', '轻微问题数', '已完成', '整改完成率(%)'] });
+    wsTeam['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsTeam, '团队周度产出');
+
+    // 2) 模块周度分布
+    if (MODULE_DATA && Array.isArray(MODULE_DATA.week)) {
+        const modRows = MODULE_DATA.week.map((m, i) => ({
+            '序号': i + 1, '模块': m.name,
+            '本周问题数': m.count || 0, '占比(%)': m.pct ?? 0,
+            '重大问题数': m.major || 0, '整改率(%)': m.fixRate ?? 0, '趋势': m.trend || ''
+        }));
+        const wsMod = XLSX.utils.json_to_sheet(modRows, { header: ['序号', '模块', '本周问题数', '占比(%)', '重大问题数', '整改率(%)', '趋势'] });
+        wsMod['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 8 }];
+        XLSX.utils.book_append_sheet(wb, wsMod, '模块周度分布');
+    }
+
+    // 3) 周度闭环明细
+    if (CLOSED_LOOP_DETAIL && Array.isArray(CLOSED_LOOP_DETAIL.week)) {
+        const clRows = CLOSED_LOOP_DETAIL.week.map((c, i) => ({
+            '序号': i + 1, '模块': c.name,
+            '已闭环': c.fixed || 0, '整改中': c.progress || 0, '未启动': c.undone || 0
+        }));
+        const wsCL = XLSX.utils.json_to_sheet(clRows, { header: ['序号', '模块', '已闭环', '整改中', '未启动'] });
+        wsCL['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+        XLSX.utils.book_append_sheet(wb, wsCL, '闭环明细');
+    }
+
+    // 4) 本周问题清单
+    const issueRows = (Array.isArray(ISSUE_DATA) ? ISSUE_DATA : []).map((it, i) => ({
+        '序号': i + 1, '上报日期': it.time || '', '场区': it.farm || '', '位置': it.location || '',
+        '问题描述': it.desc || '', '风险等级': it.risk || '', '稽核人员': it.person || '', '是否已整改': it.fixed || ''
+    }));
+    const wsIssue = XLSX.utils.json_to_sheet(issueRows, { header: ['序号', '上报日期', '场区', '位置', '问题描述', '风险等级', '稽核人员', '是否已整改'] });
+    wsIssue['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 40 }, { wch: 10 }, { wch: 10 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, wsIssue, '本周问题清单');
+
+    // 5) 汇总统计
+    const teamTotal = TEAM_DATA.week.reduce((s, m) => s + (m.total || 0), 0);
+    const majorTotal = TEAM_DATA.week.reduce((s, m) => s + (m.major || 0), 0);
+    const doneTotal = TEAM_DATA.week.reduce((s, m) => s + (m.completed || 0), 0);
+    const weeklyRate = teamTotal > 0 ? Math.round(doneTotal / teamTotal * 1000) / 10 : 0;
+    const summaryRows = [
+        { '统计项': '报告类型', '值': '稽核稽查周报' },
+        { '统计项': '生成日期', '值': today },
+        { '统计项': '本周团队总排查数', '值': teamTotal },
+        { '统计项': '本周重大问题数', '值': majorTotal },
+        { '统计项': '本周已完成闭环', '值': doneTotal },
+        { '统计项': '本周整改完成率(%)', '值': weeklyRate }
+    ];
+    const wsSum = XLSX.utils.json_to_sheet(summaryRows);
+    wsSum['!cols'] = [{ wch: 24 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, wsSum, '汇总统计');
+
+    const fname = '稽核稽查周报_' + today + '.xlsx';
+    XLSX.writeFile(wb, fname);
+    alert('✅ 稽核稽查周报导出成功！文件：' + fname + '（含 5 个 Sheet）');
+}
+
+function exportMonthlyReport() {
+    if (!_reportEmptyCheck(TEAM_DATA && TEAM_DATA.month, '本月')) return;
+    const wb = XLSX.utils.book_new();
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 1) 团队月度产出
+    const teamRows = TEAM_DATA.month.map((m, i) => ({
+        '序号': i + 1, '稽核人员': m.name,
+        '本月排查总数': m.total || 0, '重大问题数': m.major || 0,
+        '一般问题数': m.normal || 0, '轻微问题数': m.minor || 0,
+        '已完成': m.completed || 0, '整改完成率(%)': m.rate ?? 0
+    }));
+    const wsTeam = XLSX.utils.json_to_sheet(teamRows, { header: ['序号', '稽核人员', '本月排查总数', '重大问题数', '一般问题数', '轻微问题数', '已完成', '整改完成率(%)'] });
+    wsTeam['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsTeam, '团队月度产出');
+
+    // 2) 模块月度分布
+    if (MODULE_DATA && Array.isArray(MODULE_DATA.month)) {
+        const modRows = MODULE_DATA.month.map((m, i) => ({
+            '序号': i + 1, '模块': m.name,
+            '本月问题数': m.count || 0, '占比(%)': m.pct ?? 0,
+            '重大问题数': m.major || 0, '整改率(%)': m.fixRate ?? 0, '趋势': m.trend || ''
+        }));
+        const wsMod = XLSX.utils.json_to_sheet(modRows, { header: ['序号', '模块', '本月问题数', '占比(%)', '重大问题数', '整改率(%)', '趋势'] });
+        wsMod['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 8 }];
+        XLSX.utils.book_append_sheet(wb, wsMod, '模块月度分布');
+    }
+
+    // 3) 月度高风险 TOP10
+    if (Array.isArray(RISK_TOP5)) {
+        const riskRows = RISK_TOP5.map((r, i) => ({
+            '排名': i + 1, '风险问题': r.title || '', '描述/标签': r.tag || ''
+        }));
+        const wsRisk = XLSX.utils.json_to_sheet(riskRows, { header: ['排名', '风险问题', '描述/标签'] });
+        wsRisk['!cols'] = [{ wch: 8 }, { wch: 40 }, { wch: 60 }];
+        XLSX.utils.book_append_sheet(wb, wsRisk, '高风险TOP10');
+    }
+
+    // 4) 月度闭环明细
+    if (CLOSED_LOOP_DETAIL && Array.isArray(CLOSED_LOOP_DETAIL.month)) {
+        const clRows = CLOSED_LOOP_DETAIL.month.map((c, i) => ({
+            '序号': i + 1, '模块': c.name,
+            '已闭环': c.fixed || 0, '整改中': c.progress || 0, '未启动': c.undone || 0
+        }));
+        const wsCL = XLSX.utils.json_to_sheet(clRows, { header: ['序号', '模块', '已闭环', '整改中', '未启动'] });
+        wsCL['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+        XLSX.utils.book_append_sheet(wb, wsCL, '月度闭环明细');
+    }
+
+    // 5) 汇总统计
+    const teamTotal = TEAM_DATA.month.reduce((s, m) => s + (m.total || 0), 0);
+    const majorTotal = TEAM_DATA.month.reduce((s, m) => s + (m.major || 0), 0);
+    const doneTotal = TEAM_DATA.month.reduce((s, m) => s + (m.completed || 0), 0);
+    const monthlyRate = teamTotal > 0 ? Math.round(doneTotal / teamTotal * 1000) / 10 : 0;
+    const summaryRows = [
+        { '统计项': '报告类型', '值': '稽核稽查月报' },
+        { '统计项': '生成日期', '值': today },
+        { '统计项': '本月团队总排查数', '值': teamTotal },
+        { '统计项': '本月重大问题数', '值': majorTotal },
+        { '统计项': '本月已完成闭环', '值': doneTotal },
+        { '统计项': '本月整改完成率(%)', '值': monthlyRate }
+    ];
+    const wsSum = XLSX.utils.json_to_sheet(summaryRows);
+    wsSum['!cols'] = [{ wch: 24 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, wsSum, '汇总统计');
+
+    const fname = '稽核稽查月报_' + today + '.xlsx';
+    XLSX.writeFile(wb, fname);
+    alert('✅ 稽核稽查月报导出成功！文件：' + fname + '（含 5 个 Sheet）');
+}
+
+function exportRiskReport() {
+    if (!_reportEmptyCheck(RISK_TOP5, '高风险TOP10')) return;
+    const wb = XLSX.utils.book_new();
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 1) 重大风险 TOP10 清���
+    const riskRows = RISK_TOP5.map((r, i) => ({
+        '排名': i + 1, '风险问题': r.title || '', '描述/标签': r.tag || ''
+    }));
+    const wsRisk = XLSX.utils.json_to_sheet(riskRows, { header: ['排名', '风险问题', '描述/标签'] });
+    wsRisk['!cols'] = [{ wch: 8 }, { wch: 40 }, { wch: 60 }];
+    XLSX.utils.book_append_sheet(wb, wsRisk, '重大风险TOP10');
+
+    // 2) 模块重大风险分布（累计）
+    if (MODULE_DATA && Array.isArray(MODULE_DATA.total)) {
+        const modRows = MODULE_DATA.total.map((m, i) => ({
+            '序号': i + 1, '模块': m.name,
+            '累计重大问题数': m.major || 0, '累计总问题数': m.count || 0,
+            '整改率(%)': m.fixRate ?? 0, '占比(%)': m.pct ?? 0
+        }));
+        const wsMod = XLSX.utils.json_to_sheet(modRows, { header: ['序号', '模块', '累计重大问题数', '累计总问题数', '整改率(%)', '占比(%)'] });
+        wsMod['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 10 }];
+        XLSX.utils.book_append_sheet(wb, wsMod, '模块重大风险分布');
+    }
+
+    // 3) 高风险待办追踪（未关闭的高风险问题）
+    const majorTodos = (Array.isArray(TODO_DATA) ? TODO_DATA : []).filter(t => t.type === 'major' && t.status !== 'done');
+    const todoRows = majorTodos.map((t, i) => ({
+        '序号': i + 1, '风险问题': t.title || '',
+        '场区': t.farm || '', '位置': t.location || '',
+        '追踪人': t.person || '', '优先级': t.priority === 'high' ? '高' : (t.priority === 'medium' ? '中' : '低'),
+        '上报日期': t.reportedAt || '', '整改期限': t.deadline || '',
+        '剩余天数': t.daysLeft ?? '', '状态': t.status === 'overdue' ? '已逾期' : '整改中'
+    }));
+    const wsTodo = XLSX.utils.json_to_sheet(todoRows, { header: ['序号', '风险问题', '场区', '位置', '追踪人', '优先级', '上报日期', '整改期限', '剩余天数', '状态'] });
+    wsTodo['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, wsTodo, '高风险待办追踪');
+
+    // 4) 重大问题清单（按风险等级筛）
+    const highIssues = (Array.isArray(ISSUE_DATA) ? ISSUE_DATA : []).filter(it => it.risk === '高');
+    const issueRows = highIssues.map((it, i) => ({
+        '序号': i + 1, '上报日期': it.time || '', '场区': it.farm || '', '位置': it.location || '',
+        '问题描述': it.desc || '', '稽核人员': it.person || '', '是否已整改': it.fixed || ''
+    }));
+    const wsIssue = XLSX.utils.json_to_sheet(issueRows, { header: ['序号', '上报日期', '场区', '位置', '问题描述', '稽核人员', '是否已整改'] });
+    wsIssue['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 40 }, { wch: 10 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, wsIssue, '高风险问题清单');
+
+    // 5) 汇总
+    const totalMajor = RISK_TOP5.length;
+    const moduleMajor = (MODULE_DATA && Array.isArray(MODULE_DATA.total)) ? MODULE_DATA.total.reduce((s, m) => s + (m.major || 0), 0) : 0;
+    const summaryRows = [
+        { '统计项': '报告类型', '值': '重大风险专项报告' },
+        { '统计项': '生成日期', '值': today },
+        { '统计项': 'TOP10 风险总数', '值': totalMajor },
+        { '统计项': '累计模块重大问题总数', '值': moduleMajor },
+        { '统计项': '未关闭高风险待办', '值': majorTodos.length },
+        { '统计项': '已记录高风险问题', '值': highIssues.length }
+    ];
+    const wsSum = XLSX.utils.json_to_sheet(summaryRows);
+    wsSum['!cols'] = [{ wch: 24 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, wsSum, '汇总统计');
+
+    const fname = '重大风险专项报告_' + today + '.xlsx';
+    XLSX.writeFile(wb, fname);
+    alert('✅ 重大风险专项报告导出成功！文件：' + fname + '（含 5 个 Sheet）');
+}
+
+function exportStaffReport() {
+    if (!_reportEmptyCheck(TEAM_DATA && TEAM_DATA.year, '本年')) return;
+    const wb = XLSX.utils.book_new();
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 1) 人员三期对照表
+    const periods = ['week', 'month', 'year'];
+    const periodLabels = { week: '本周', month: '本月', year: '本年' };
+    const teamRows = STAFF.map((name, i) => {
+        const row = { '序号': i + 1, '稽核人员': name };
+        periods.forEach(p => {
+            const data = (TEAM_DATA[p] || []).find(d => d.name === name) || {};
+            row[periodLabels[p] + '排查总数'] = data.total || 0;
+            row[periodLabels[p] + '重大问题'] = data.major || 0;
+            row[periodLabels[p] + '已完成'] = data.completed || 0;
+            row[periodLabels[p] + '整改率(%)'] = data.rate ?? 0;
+        });
+        return row;
+    });
+    const header = ['序号', '稽核人员'];
+    periods.forEach(p => header.push(periodLabels[p] + '排查总数', periodLabels[p] + '重大问题', periodLabels[p] + '已完成', periodLabels[p] + '整改率(%)'));
+    const wsTeam = XLSX.utils.json_to_sheet(teamRows, { header });
+    const wsCols = [{ wch: 6 }, { wch: 10 }];
+    periods.forEach(() => wsCols.push({ wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 12 }));
+    wsTeam['!cols'] = wsCols;
+    XLSX.utils.book_append_sheet(wb, wsTeam, '人员三期对照');
+
+    // 2) 本年度排行（按累计排查数）
+    const yearRank = [...(TEAM_DATA.year || [])].sort((a, b) => (b.total || 0) - (a.total || 0));
+    const rankRows = yearRank.map((m, i) => ({
+        '排名': i + 1, '稽核人员': m.name,
+        '本年排查总数': m.total || 0, '本年重大问题': m.major || 0,
+        '本年已完成': m.completed || 0, '本年整改率(%)': m.rate ?? 0
+    }));
+    const wsRank = XLSX.utils.json_to_sheet(rankRows, { header: ['排名', '稽核人员', '本年排查总��', '本年重大问题', '本年已完成', '本年整改率(%)'] });
+    wsRank['!cols'] = [{ wch: 8 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsRank, '本年累计排行');
+
+    // 3) 风险识别能力分析
+    const riskRows = yearRank.map(m => {
+        const total = m.total || 0;
+        const majorRatio = total > 0 ? Math.round((m.major || 0) / total * 1000) / 10 : 0;
+        let level = '基础型';
+        if (m.major >= 2) level = '核心型';
+        else if (m.major >= 1) level = '稳健型';
+        return {
+            '稽核人员': m.name, '本年总排查数': total, '本年重大问题': m.major || 0,
+            '重大问题占比(%)': majorRatio, '整改率(%)': m.rate ?? 0,
+            '能力评级': level
+        };
+    });
+    const wsRisk = XLSX.utils.json_to_sheet(riskRows, { header: ['稽核人员', '本年总排查数', '本年重大问题', '重大问题占比(%)', '整改率(%)', '能力评级'] });
+    wsRisk['!cols'] = [{ wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, wsRisk, '风险识别能力');
+
+    // 4) 闭环能力分析
+    const closeRows = yearRank.map(m => {
+        const total = m.total || 0;
+        const completed = m.completed || 0;
+        const uncompleted = Math.max(total - completed, 0);
+        return {
+            '稽核人员': m.name, '本年总排查数': total, '已完成': completed,
+            '未完成': uncompleted, '闭环率(%)': m.rate ?? 0,
+            '闭环表现': m.rate >= 95 ? '优秀' : (m.rate >= 80 ? '良好' : '待提升')
+        };
+    });
+    const wsClose = XLSX.utils.json_to_sheet(closeRows, { header: ['稽核人员', '本年总排查数', '已完成', '未完成', '闭环率(%)', '闭环表现'] });
+    wsClose['!cols'] = [{ wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, wsClose, '闭环能力分析');
+
+    // 5) 汇总统计
+    const yearTotal = TEAM_DATA.year.reduce((s, m) => s + (m.total || 0), 0);
+    const yearMajor = TEAM_DATA.year.reduce((s, m) => s + (m.major || 0), 0);
+    const yearDone = TEAM_DATA.year.reduce((s, m) => s + (m.completed || 0), 0);
+    const yearRate = yearTotal > 0 ? Math.round(yearDone / yearTotal * 1000) / 10 : 0;
+    const summaryRows = [
+        { '统计项': '报告类型', '值': '人员效能评估报告' },
+        { '统计项': '生成日期', '值': today },
+        { '统计项': '评估人员数', '值': STAFF.length },
+        { '统计项': '本年团队总排查数', '值': yearTotal },
+        { '统计项': '本年团队重大问题数', '值': yearMajor },
+        { '统计项': '本年团队整改完成数', '值': yearDone },
+        { '统计项': '本年团队整改完成率(%)', '值': yearRate }
+    ];
+    const wsSum = XLSX.utils.json_to_sheet(summaryRows);
+    wsSum['!cols'] = [{ wch: 24 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, wsSum, '汇总统计');
+
+    const fname = '人员效能评估报告_' + today + '.xlsx';
+    XLSX.writeFile(wb, fname);
+    alert('✅ 人员效能评估报告导出成功！文件：' + fname + '（含 5 个 Sheet）');
 }
 
 // ============== TODO Charts ==============
